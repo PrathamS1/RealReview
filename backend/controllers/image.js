@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const uploadImage = async (req, res) => {
-    const { location, rating, submitted_by } = req.body;
+    const { location, rating, submitted_By } = req.body;
     const filename = req.file;
     if(!filename) {
         return res.status(400).json({ error: 'No Image is uploaded' });
@@ -11,7 +11,7 @@ const uploadImage = async (req, res) => {
     try{
         const result = await pool.query(
             'INSERT INTO images (filename, location, submitted_by, rating) VALUES ($1, $2, $3, $4) RETURNING *',
-            [filename.filename, location, submitted_by, rating || null]
+            [filename.filename, location, submitted_By, rating || null]
         );
         res.status(201).json({
             message: 'Image uploaded successfully',

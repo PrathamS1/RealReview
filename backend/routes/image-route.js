@@ -18,6 +18,6 @@ router.post('/', upload.single('image'), imagesController.uploadImage);
 router.get('/', imagesController.getImages);
 
 //! Route to delete image
-router.delete('/images/:id', imagesController.deleteImage);
+router.delete('/:id', imagesController.deleteImage);
 
 module.exports = router;
