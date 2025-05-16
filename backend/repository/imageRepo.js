@@ -1,0 +1,43 @@
+const pool=require('../database/db');
+
+//* This function inserts image data into the database
+const insertImageData=async(file, location, submitted_by, rating)=>{
+    const res=await pool.query(
+        'insert into images (filename, location, submitted_by, rating) VALUES ($1, $2, $3, $4) RETURNING *',
+        [file, location, submitted_by, rating || null]
+    );
+    return res.rows[0];
+}
+
+//* This function retrieves all image data from the database
+const getAllImageData=async()=>{
+    const res=await pool.query(
+        'select * from images order by timestamp desc'
+    );
+    return res.rows;
+}
+
+//* This function retrieves image data by ID from the database
+const getImagesById=async(id)=>{
+    const res=await pool.query(
+        'select * from images where id=$1',
+        [id]
+    );
+    return res.rows[0];
+}
+
+//* This function deletes image data by ID from the database
+const deleteImageData=async(id)=>{
+    const res=await pool.query(
+        'delete from images where id=$1 returning *',
+        [id]
+    );
+    return res.rows[0];
+}
+
+module.exports={
+    insertImageData,
+    getAllImageData,
+    getImagesById,
+    deleteImageData
+}
