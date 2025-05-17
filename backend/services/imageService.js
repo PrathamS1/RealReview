@@ -6,6 +6,7 @@ const {
   getImagesById,
   deleteImageData,
 } = require("../repository/imageRepo");
+const Image = require("../models/imageModel");
 
 //^ This function calls the repository function to get image data from the database
 const getImages = async () => {
@@ -38,14 +39,21 @@ const insertImage = async (req) => {
     throw new Error("No image is uploaded");
   }
   const uniqueName = Date.now() + "-" + file.originalname;
+  const imageInstance = new Image(
+    uniqueName,
+    location,
+    submitted_by,
+    rating
+  );
 
   try {
-    const image = await insertImageData(
-      uniqueName,
-      location,
-      submitted_by,
-      rating || null
-    );
+    // const image = await insertImageData(
+    //   uniqueName,
+    //   location,
+    //   submitted_by,
+    //   rating || null
+    // );
+    const image = await insertImageData(imageInstance);
     const savePath = path.join(__dirname, "../imageUploads", uniqueName);
     fs.writeFileSync(savePath, file.buffer);
     return image;

@@ -1,10 +1,10 @@
 const pool=require('../database/db');
 
 //* This function inserts image data into the database
-const insertImageData=async(file, location, submitted_by, rating)=>{
+const insertImageData=async(image)=>{
     const res=await pool.query(
         'insert into images (filename, location, submitted_by, rating) VALUES ($1, $2, $3, $4) RETURNING *',
-        [file, location, submitted_by, rating || null]
+        [image.filename, image.location, image.submitted_by, image.rating || null]
     );
     return res.rows[0];
 }
