@@ -12,7 +12,7 @@ const insertImageData=async(image)=>{
 //* This function retrieves all image data from the database
 const getAllImageData=async()=>{
     const res=await pool.query(
-        'select * from images order by timestamp desc'
+        'select id, filename, location, submitted_by, rating from images order by timestamp desc'
     );
     return res.rows;
 }
@@ -20,7 +20,7 @@ const getAllImageData=async()=>{
 //* This function retrieves image data by ID from the database
 const getImagesById=async(id)=>{
     const res=await pool.query(
-        'select * from images where id=$1',
+        'select id, filename, location, submitted_by, rating from images where id=$1',
         [id]
     );
     return res.rows[0];
@@ -29,7 +29,7 @@ const getImagesById=async(id)=>{
 //* This function deletes image data by ID from the database
 const deleteImageData=async(id)=>{
     const res=await pool.query(
-        'delete from images where id=$1 returning *',
+        'delete from images where id=$1 returning id, filename, location, submitted_by, rating',
         [id]
     );
     return res.rows[0];
