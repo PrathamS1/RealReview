@@ -47,12 +47,6 @@ const insertImage = async (req) => {
   );
 
   try {
-    // const image = await insertImageData(
-    //   uniqueName,
-    //   location,
-    //   submitted_by,
-    //   rating || null
-    // );
     const image = await insertImageData(imageInstance);
     const savePath = path.join(__dirname, "../imageUploads", uniqueName);
     fs.writeFileSync(savePath, file.buffer);
