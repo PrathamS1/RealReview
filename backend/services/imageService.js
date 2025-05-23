@@ -7,15 +7,34 @@ const {
   deleteImageData,
 } = require("../repository/imageRepo");
 const Image = require("../models/imageModel");
+const { AppError, IMAGE_ERRORS, handleDatabaseError, handleImageError } = require("../errors/errorHandler");
 
 //^ This function calls the repository function to get image data from the database
 const getImages = async () => {
   try {
     const images = await getAllImageData();
-    return images;
-  } catch (err) {
-    console.error("Error fetching images from image repo:", err);
-    throw new Error("Failed to fetch images");
+    return images.map(image => {
+      const imageObj = new Image(
+        image.filename,
+        image.location,
+        image.submitted_by,
+        image.rating
+      );
+      imageObj.id = image.id;
+      imageObj.timestamp = image.timestamp;
+      return imageObj;
+    });
+  } catch (error) {
+    console.error("Error fetching images from image repo:", error);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    // database errors
+    if (error.code) {
+      throw handleDatabaseError(error);
+    }
+    // other errors
+    throw handleImageError(error);
   }
 };
 
@@ -23,11 +42,30 @@ const getImages = async () => {
 const getImageById = async (id) => {
   try {
     const image = await getImagesById(id);
-    if (!image) throw new Error("Image data not found");
-    return image;
-  } catch (err) {
-    console.error("Error fetching image data by ID from image repo:", err);
-    throw new Error("Failed to fetch image data by ID");
+    if (!image) {
+      throw new AppError(IMAGE_ERRORS.NOT_FOUND);
+    }
+    
+    const imageObj = new Image(
+      image.filename,
+      image.location,
+      image.submitted_by,
+      image.rating
+    );
+    imageObj.id = image.id;
+    imageObj.timestamp = image.timestamp;
+    return imageObj;
+  } catch (error) {
+    console.error("Error fetching image data by ID from image repo:", error);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    // database errors
+    if (error.code) {
+      throw handleDatabaseError(error);
+    }
+    // other errors
+    throw handleImageError(error);
   }
 };
 
@@ -36,8 +74,9 @@ const insertImage = async (req) => {
   const { location, rating, submitted_by } = req.body;
   const file = req.file;
   if (!file) {
-    throw new Error("No image is uploaded");
+    throw new AppError(IMAGE_ERRORS.NO_FILE);
   }
+
   const uniqueName = Date.now() + "-" + file.originalname;
   const imageInstance = new Image(
     uniqueName,
@@ -50,10 +89,31 @@ const insertImage = async (req) => {
     const image = await insertImageData(imageInstance);
     const savePath = path.join(__dirname, "../imageUploads", uniqueName);
     fs.writeFileSync(savePath, file.buffer);
-    return image;
-  } catch (err) {
-    console.error("Error inserting image in image repo:", err);
-    throw new Error("Failed to insert image");
+
+    const imageObj = new Image(
+      image.filename,
+      image.location,
+      image.submitted_by,
+      image.rating
+    );
+    imageObj.id = image.id;
+    imageObj.timestamp = image.timestamp;
+    return imageObj;
+  } catch (error) {
+    console.error("Error inserting image in image repo:", error);
+    const savePath = path.join(__dirname, "../imageUploads", uniqueName);
+    if (fs.existsSync(savePath)) {
+      fs.unlinkSync(savePath);
+    }
+    if (error instanceof AppError) {
+      throw error;
+    }
+    // database errors
+    if (error.code) {
+      throw handleDatabaseError(error);
+    }
+    // other errors
+    throw handleImageError(error);
   }
 };
 
@@ -61,20 +121,42 @@ const insertImage = async (req) => {
 const deleteImage = async (id) => {
   try {
     const image = await getImagesById(id);
-    if (!image) throw new Error("Image data not found");
+    if (!image) {
+      throw new AppError(IMAGE_ERRORS.NOT_FOUND);
+    }
+
+    const imageObj = new Image(
+      image.filename,
+      image.location,
+      image.submitted_by,
+      image.rating
+    );
+    imageObj.id = image.id;
+    imageObj.timestamp = image.timestamp;
+
     const file = image.filename;
     const filePath = path.join(__dirname, "../imageUploads", file);
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.error("Error deleting file:", err);
-        throw new Error("Failed to delete image file");
-      }
-    });
-    const deletedImage = await deleteImageData(id);
-    return deletedImage;
-  } catch (err) {
-    console.error("Error deleting image in image repo:", err);
-    throw new Error("Failed to delete image");
+    
+    try {
+      fs.unlinkSync(filePath);
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      throw new AppError(IMAGE_ERRORS.FILE_DELETE_FAILED);
+    }
+
+    await deleteImageData(id);
+    return imageObj;
+  } catch (error) {
+    console.error("Error deleting image in image repo:", error);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    // database errors
+    if (error.code) {
+      throw handleDatabaseError(error);
+    }
+    // other errors
+    throw handleImageError(error);
   }
 };
 
